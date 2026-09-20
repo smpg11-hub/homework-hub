@@ -4,7 +4,7 @@
   /* =================================================================
      Constants & meta
      ================================================================= */
-  const STORAGE_KEY = "homeworkHub.tasks.v1";
+  const STORAGE_KEY = "homeworkHub.tasks.v2";
 
   const CATEGORY = {
     "urgent-important": { label: "ด่วน + จำเป็น", emoji: "🔴", cls: "ui", order: 0 },
@@ -112,52 +112,16 @@
     const t = todayISO();
     return [
       {
-        id: uid(), subject: "คณิตศาสตร์", title: "ทำแบบฝึกหัดบทที่ 2 ข้อ 1-15",
-        type: "แบบฝึกหัด", dueDate: t, dueTime: "23:59",
-        note: "ตรวจคำตอบกับเฉลยท้ายเล่มก่อนส่ง", category: "urgent-important",
-        status: "doing", createdAt: Date.now() - 500000,
-      },
-      {
-        id: uid(), subject: "วิทยาศาสตร์", title: "เขียนรายงานผลการทดลองเรื่องการสังเคราะห์แสง",
-        type: "รายงาน", dueDate: addDays(t, 1), dueTime: "",
-        note: "แนบภาพผลการทดลองด้วย", category: "urgent-important",
-        status: "todo", createdAt: Date.now() - 400000,
-      },
-      {
-        id: uid(), subject: "ภาษาอังกฤษ", title: "Vocabulary Worksheet Unit 5",
-        type: "ใบงาน", dueDate: addDays(t, 2), dueTime: "",
-        note: "", category: "urgent-notimportant",
-        status: "todo", createdAt: Date.now() - 300000,
-      },
-      {
-        id: uid(), subject: "ภาษาไทย", title: "สรุปบทเรียนเรื่องนิราศภูเขาทอง",
-        type: "สรุปบทเรียน", dueDate: addDays(t, 5), dueTime: "",
-        note: "สรุปใส่สมุด ไม่เกิน 2 หน้า", category: "noturgent-important",
-        status: "todo", createdAt: Date.now() - 200000,
-      },
-      {
-        id: uid(), subject: "เทคโนโลยี", title: "ออกแบบหน้าจอเว็บไซต์โครงงาน (กิจกรรม 6.3)",
-        type: "โครงงาน", dueDate: addDays(t, 7), dueTime: "",
-        note: "ทำ wireframe ก่อนลงมือจริง", category: "noturgent-important",
-        status: "doing", createdAt: Date.now() - 150000,
-      },
-      {
-        id: uid(), subject: "ศิลปะ", title: "วาดภาพระบายสีหัวข้ออิสระ",
-        type: "งานฝีมือ", dueDate: addDays(t, 6), dueTime: "",
-        note: "", category: "noturgent-notimportant",
-        status: "todo", createdAt: Date.now() - 100000,
-      },
-      {
-        id: uid(), subject: "สุขศึกษา", title: "ทำใบงานเรื่องอาหารหลัก 5 หมู่",
-        type: "ใบงาน", dueDate: addDays(t, -1), dueTime: "",
-        note: "ส่งช้าไปแล้ว ต้องรีบส่งของเก่าให้ครูก่อน", category: "urgent-important",
-        status: "todo", createdAt: Date.now() - 50000,
-      },
-      {
-        id: uid(), subject: "คณิตศาสตร์", title: "ทบทวนสูตรพื้นที่รูปเรขาคณิตก่อนสอบ",
-        type: "ทบทวน", dueDate: addDays(t, 3), dueTime: "",
-        note: "", category: "noturgent-notimportant",
-        status: "done", createdAt: Date.now() - 20000,
+        id: uid(),
+        subject: "ตัวอย่าง",
+        title: "ลองเพิ่มการบ้านของคุณ",
+        type: "ตัวอย่าง",
+        dueDate: addDays(t, 1),
+        dueTime: "",
+        note: "นี่คือการบ้านตัวอย่าง เพื่อให้ดูวิธีกรอกข้อมูลก่อนเริ่มใช้งานจริง",
+        category: "urgent-important",
+        status: "todo",
+        createdAt: Date.now(),
       },
     ];
   }
