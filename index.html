@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Homework Hub — จัดการการบ้านให้อยู่หมัด</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Sidebar / top nav -->
+  <header class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">HH</span>
+      <div class="brand-text">
+        <strong>Homework Hub</strong>
+        <small>ไม่มีงานไหนหลุดมืออีกต่อไป</small>
+      </div>
+    </div>
+
+    <nav class="nav" aria-label="เมนูหลัก">
+      <button class="nav-item is-active" data-view="dashboard" type="button">
+        <svg viewBox="0 0 24 24" class="nav-icon"><path d="M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm10 0h6V11h-6v9Zm0-16v5h6V4h-6Z"/></svg>
+        <span>ภาพรวม</span>
+      </button>
+      <button class="nav-item" data-view="tasks" type="button">
+        <svg viewBox="0 0 24 24" class="nav-icon"><path d="M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Zm2 4v2h10V8H7Zm0 4v2h10v-2H7Zm0 4v2h6v-2H7Z"/></svg>
+        <span>การบ้านทั้งหมด</span>
+      </button>
+      <button class="nav-item" data-view="add" type="button">
+        <svg viewBox="0 0 24 24" class="nav-icon"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5Z"/></svg>
+        <span>เพิ่มการบ้าน</span>
+      </button>
+      <button class="nav-item" data-view="notifications" type="button">
+        <svg viewBox="0 0 24 24" class="nav-icon"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6v-5a7 7 0 0 0-5.5-6.84V3a1.5 1.5 0 0 0-3 0v1.16A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2Z"/></svg>
+        <span>แจ้งเตือน</span>
+        <span class="nav-badge" id="notif-badge" hidden>0</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-foot">
+      <p>กิจกรรม 6.3 · กระบวนการออกแบบเชิงวิศวกรรม</p>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Topbar: search (shown on tasks view) -->
+    <div class="topbar">
+      <div class="topbar-title">
+        <h1 id="view-title">ภาพรวมการบ้าน</h1>
+        <p id="view-subtitle">สรุปสถานะงานทั้งหมดของคุณวันนี้</p>
+      </div>
+      <div class="topbar-search" id="topbar-search" hidden>
+        <svg viewBox="0 0 24 24" class="search-icon"><path d="m21 21-4.34-4.34m0 0a7 7 0 1 0-9.9-9.9 7 7 0 0 0 9.9 9.9Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input type="search" id="search-input" placeholder="ค้นหาวิชาหรือชื่องาน...">
+      </div>
+    </div>
+
+    <!-- Dashboard view -->
+    <section class="view" id="view-dashboard">
+      <div class="stat-grid" id="stat-grid"></div>
+
+      <div class="dash-columns">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>ต้องรีบทำ</h2>
+            <button type="button" class="link-btn" data-goto="tasks">ดูทั้งหมด</button>
+          </div>
+          <div class="panel-list" id="dash-urgent-list"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>สัดส่วนตามความสำคัญ</h2>
+          </div>
+          <div class="legend-bars" id="dash-breakdown"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- All tasks view -->
+    <section class="view" id="view-tasks" hidden>
+      <div class="controls-row">
+        <div class="filter-chips" id="filter-chips"></div>
+        <div class="sort-row">
+          <label for="sort-select">เรียงตาม</label>
+          <select id="sort-select">
+            <option value="priority">ความสำคัญ</option>
+            <option value="due">วันกำหนดส่ง</option>
+          </select>
+        </div>
+      </div>
+      <div class="task-list" id="task-list"></div>
+      <div class="empty-state" id="tasks-empty" hidden></div>
+    </section>
+
+    <!-- Add / Edit view -->
+    <section class="view" id="view-add" hidden>
+      <form class="task-form" id="task-form" novalidate>
+        <input type="hidden" id="form-id">
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="f-subject">ชื่อวิชา</label>
+            <input type="text" id="f-subject" placeholder="เช่น คณิตศาสตร์" required>
+          </div>
+          <div class="field">
+            <label for="f-type">ประเภทของงาน</label>
+            <input type="text" id="f-type" placeholder="เช่น แบบฝึกหัด, รายงาน, ใบงาน">
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="f-title">ชื่องาน / รายละเอียดงาน</label>
+          <input type="text" id="f-title" placeholder="เช่น ทำแบบฝึกหัดบทที่ 2 ข้อ 1-10" required>
+        </div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="f-date">วันกำหนดส่ง</label>
+            <input type="date" id="f-date" required>
+          </div>
+          <div class="field">
+            <label for="f-time">เวลา (ถ้ามี)</label>
+            <input type="time" id="f-time">
+          </div>
+        </div>
+
+        <fieldset class="field category-field">
+          <legend>ประเภทตามความเร่งด่วน/ความจำเป็น</legend>
+          <div class="category-picker" id="category-picker">
+            <label class="cat-option cat-ui">
+              <input type="radio" name="category" value="urgent-important" required>
+              <span class="cat-dot"></span>
+              <span>ด่วน + จำเป็น</span>
+            </label>
+            <label class="cat-option cat-un">
+              <input type="radio" name="category" value="urgent-notimportant">
+              <span class="cat-dot"></span>
+              <span>ด่วน + ไม่จำเป็น</span>
+            </label>
+            <label class="cat-option cat-ni">
+              <input type="radio" name="category" value="noturgent-important">
+              <span class="cat-dot"></span>
+              <span>ไม่ด่วน + จำเป็น</span>
+            </label>
+            <label class="cat-option cat-nn">
+              <input type="radio" name="category" value="noturgent-notimportant">
+              <span class="cat-dot"></span>
+              <span>ไม่ด่วน + ไม่จำเป็น</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <div class="field">
+          <label for="f-note">หมายเหตุ</label>
+          <textarea id="f-note" rows="3" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-ghost" id="form-cancel" hidden>ยกเลิกการแก้ไข</button>
+          <button type="submit" class="btn btn-primary" id="form-submit">เพิ่มการบ้าน</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Notifications view -->
+    <section class="view" id="view-notifications" hidden>
+      <div class="notif-groups" id="notif-groups"></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- Bottom tab bar (mobile) -->
+<nav class="tabbar" aria-label="เมนูหลัก (มือถือ)">
+  <button class="tab-item is-active" data-view="dashboard" type="button">
+    <svg viewBox="0 0 24 24"><path d="M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm10 0h6V11h-6v9Zm0-16v5h6V4h-6Z"/></svg>
+    <span>ภาพรวม</span>
+  </button>
+  <button class="tab-item" data-view="tasks" type="button">
+    <svg viewBox="0 0 24 24"><path d="M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Zm2 4v2h10V8H7Zm0 4v2h10v-2H7Zm0 4v2h6v-2H7Z"/></svg>
+    <span>ทั้งหมด</span>
+  </button>
+  <button class="tab-item tab-add" data-view="add" type="button">
+    <svg viewBox="0 0 24 24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5Z"/></svg>
+    <span>เพิ่ม</span>
+  </button>
+  <button class="tab-item" data-view="notifications" type="button">
+    <svg viewBox="0 0 24 24"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6v-5a7 7 0 0 0-5.5-6.84V3a1.5 1.5 0 0 0-3 0v1.16A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2Z"/></svg>
+    <span>แจ้งเตือน</span>
+    <span class="nav-badge" id="notif-badge-mobile" hidden>0</span>
+  </button>
+</nav>
+
+<!-- Confirm delete modal -->
+<div class="modal-overlay" id="confirm-overlay" hidden>
+  <div class="modal" role="alertdialog" aria-labelledby="confirm-title">
+    <h3 id="confirm-title">ยืนยันการลบงานนี้?</h3>
+    <p id="confirm-body">การลบจะไม่สามารถย้อนกลับได้</p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" id="confirm-cancel">ยกเลิก</button>
+      <button type="button" class="btn btn-danger" id="confirm-delete">ลบงาน</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-stack" id="toast-stack" aria-live="polite"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
