@@ -5,6 +5,10 @@
      Constants & meta
      ================================================================= */
   const STORAGE_KEY = "homeworkHub.tasks.v2";
+  const STORAGE_BACKUP_KEY = "homeworkHub.tasks.backup.v1";
+  const BACKUP_META_KEY = "homeworkHub.backupMeta.v1";
+  const BACKUP_REMIND_AFTER_TASKS = 3;
+  const BACKUP_REMIND_AFTER_DAYS = 7;
 
   const CATEGORY = {
     "urgent-important": { label: "ด่วน + จำเป็น", emoji: "🔴", cls: "ui", order: 0 },
@@ -84,46 +88,188 @@
   }
 
   /* =================================================================
-     Storage
+     Storage + backup
      ================================================================= */
   function loadTasks() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        tasks = JSON.parse(raw);
-        return;
+    const candidates = [STORAGE_KEY, STORAGE_BACKUP_KEY];
+
+    for (const key of candidates) {
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) continue;
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          tasks = parsed;
+          if (key === STORAGE_BACKUP_KEY) {
+            try { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); } catch (_) {}
+          }
+          return;
+        }
+      } catch (e) {
+        console.error(`โหลดข้อมูลจาก ${key} ไม่สำเร็จ`, e);
       }
-    } catch (e) {
-      console.error("โหลดข้อมูลไม่สำเร็จ", e);
     }
+
+    // Only create the sample when there is genuinely no usable saved data.
     tasks = seedTasks();
     saveTasks();
   }
+
   function saveTasks() {
+    const serialized = JSON.stringify(tasks);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+      localStorage.setItem(STORAGE_KEY, serialized);
+      localStorage.setItem(STORAGE_BACKUP_KEY, serialized);
     } catch (e) {
       console.error("บันทึกข้อมูลไม่สำเร็จ", e);
-      showToast("บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่", "danger");
+      showToast("บันทึกข้อมูลไม่สำเร็จ กรุณาสำรองข้อมูลเป็นไฟล์", "danger");
     }
+    updateBackupStatus();
   }
 
   function seedTasks() {
     const t = todayISO();
-    return [
-      {
-        id: uid(),
-        subject: "ตัวอย่าง",
-        title: "ลองเพิ่มการบ้านของคุณ",
-        type: "ตัวอย่าง",
-        dueDate: addDays(t, 1),
-        dueTime: "",
-        note: "นี่คือการบ้านตัวอย่าง เพื่อให้ดูวิธีกรอกข้อมูลก่อนเริ่มใช้งานจริง",
-        category: "urgent-important",
-        status: "todo",
-        createdAt: Date.now(),
-      },
-    ];
+    return [{
+      id: uid(),
+      subject: "ตัวอย่าง",
+      title: "ลองเพิ่มการบ้านของคุณ",
+      type: "ตัวอย่าง",
+      dueDate: addDays(t, 1),
+      dueTime: "",
+      note: "นี่คือการบ้านตัวอย่าง เพื่อให้ดูวิธีกรอกข้อมูลก่อนเริ่มใช้งานจริง",
+      category: "urgent-important",
+      status: "todo",
+      createdAt: Date.now(),
+    }];
+  }
+
+  function getBackupMeta() {
+    try {
+      return JSON.parse(localStorage.getItem(BACKUP_META_KEY) || "{}");
+    } catch (_) {
+      return {};
+    }
+  }
+
+  function setBackupMeta(meta) {
+    try { localStorage.setItem(BACKUP_META_KEY, JSON.stringify(meta)); } catch (_) {}
+  }
+
+  function updateBackupStatus() {
+    const el = $("#backup-status");
+    if (!el) return;
+    const meta = getBackupMeta();
+    if (!meta.lastBackupAt) {
+      el.textContent = "ยังไม่มีการสำรองข้อมูลจากอุปกรณ์นี้";
+      return;
+    }
+    const d = new Date(meta.lastBackupAt);
+    el.textContent = `สำรองล่าสุด: ${d.toLocaleString("th-TH", {
+      dateStyle: "medium",
+      timeStyle: "short",
+    })}`;
+  }
+
+  function maybeShowBackupReminder() {
+    if (tasks.length < BACKUP_REMIND_AFTER_TASKS) return;
+
+    const meta = getBackupMeta();
+    const now = Date.now();
+    const lastBackup = Number(meta.lastBackupAt || 0);
+    const lastReminder = Number(meta.lastReminderAt || 0);
+    const sevenDays = BACKUP_REMIND_AFTER_DAYS * 24 * 60 * 60 * 1000;
+
+    const shouldRemind =
+      (!lastBackup && !meta.dismissedOnce) ||
+      (lastBackup && now - lastBackup >= sevenDays) ||
+      (!lastBackup && meta.dismissedOnce && now - lastReminder >= sevenDays);
+
+    if (!shouldRemind) return;
+
+    setBackupMeta({ ...meta, lastReminderAt: now });
+
+    const go = window.confirm(
+      "💾 แนะนำให้สำรองข้อมูลการบ้านไว้สักครั้งนะ\n\n" +
+      "ถ้าล้างคุกกี้และข้อมูลเว็บไซต์ใน Chrome การบ้านที่เก็บในเครื่องอาจหายได้\n\n" +
+      "กด “ตกลง” เพื่อสำรองข้อมูลตอนนี้ หรือ “ยกเลิก” เพื่อไว้ทีหลัง"
+    );
+
+    if (go) {
+      downloadBackup();
+    } else {
+      setBackupMeta({ ...getBackupMeta(), dismissedOnce: true, lastReminderAt: now });
+      showToast("ไว้ค่อยสำรองภายหลังก็ได้ 💾", "");
+    }
+  }
+
+  function downloadBackup() {
+    const payload = {
+      app: "Homework Hub",
+      formatVersion: 1,
+      exportedAt: new Date().toISOString(),
+      tasks,
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `homework-hub-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+
+    setBackupMeta({
+      ...getBackupMeta(),
+      lastBackupAt: Date.now(),
+      dismissedOnce: false,
+      lastReminderAt: Date.now(),
+    });
+    updateBackupStatus();
+    showToast("สำรองข้อมูลเรียบร้อยแล้ว 💾", "success");
+  }
+
+  function restoreBackupFromFile(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const payload = JSON.parse(reader.result);
+        const restoredTasks = Array.isArray(payload) ? payload : payload.tasks;
+
+        if (!Array.isArray(restoredTasks)) throw new Error("รูปแบบไฟล์ไม่ถูกต้อง");
+
+        const valid = restoredTasks.every((t) =>
+          t &&
+          typeof t.id === "string" &&
+          typeof t.title === "string" &&
+          typeof t.subject === "string" &&
+          typeof t.dueDate === "string" &&
+          typeof t.category === "string" &&
+          typeof t.status === "string"
+        );
+        if (!valid) throw new Error("ข้อมูลการบ้านไม่ครบถ้วน");
+
+        const ok = window.confirm(
+          `กู้คืนการบ้าน ${restoredTasks.length} งานหรือไม่?\n\n` +
+          "ข้อมูลการบ้านปัจจุบันบนเครื่องจะถูกแทนที่ด้วยข้อมูลในไฟล์สำรอง"
+        );
+        if (!ok) return;
+
+        tasks = restoredTasks;
+        saveTasks();
+        renderCurrentView();
+        updateBackupStatus();
+        showToast(`กู้คืนข้อมูล ${tasks.length} งานเรียบร้อยแล้ว`, "success");
+      } catch (e) {
+        console.error("กู้คืนข้อมูลไม่สำเร็จ", e);
+        showToast("ไฟล์สำรองไม่ถูกต้องหรือเสียหาย", "danger");
+      }
+    };
+    reader.onerror = () => showToast("อ่านไฟล์สำรองไม่สำเร็จ", "danger");
+    reader.readAsText(file);
   }
 
   function uid() {
@@ -170,12 +316,16 @@
   const confirmDeleteBtn = $("#confirm-delete");
 
   const toastStack = $("#toast-stack");
+  const backupDownloadBtn = $("#backup-download");
+  const backupRestoreBtn = $("#backup-restore");
+  const backupFileInput = $("#backup-file");
 
   const VIEW_META = {
     dashboard: { title: "ภาพรวมการบ้าน", subtitle: "สรุปสถานะงานทั้งหมดของคุณวันนี้", search: false },
     tasks: { title: "การบ้านทั้งหมด", subtitle: "ดู ค้นหา และจัดการงานทุกชิ้นของคุณ", search: true },
     add: { title: "เพิ่มการบ้าน", subtitle: "กรอกรายละเอียดงานใหม่ให้ครบถ้วน", search: false },
     notifications: { title: "แจ้งเตือน", subtitle: "งานที่ใกล้ถึงกำหนดและเลยกำหนดส่ง", search: false },
+    backup: { title: "สำรองข้อมูล", subtitle: "ป้องกันการบ้านหายเมื่อข้อมูลเว็บไซต์ถูกล้าง", search: false },
   };
 
   /* =================================================================
@@ -599,12 +749,30 @@
   }
 
   /* =================================================================
+     Backup events
+     ================================================================= */
+  function bindBackupEvents() {
+    if (backupDownloadBtn) backupDownloadBtn.addEventListener("click", downloadBackup);
+    if (backupRestoreBtn && backupFileInput) {
+      backupRestoreBtn.addEventListener("click", () => backupFileInput.click());
+      backupFileInput.addEventListener("change", () => {
+        const file = backupFileInput.files && backupFileInput.files[0];
+        if (file) restoreBackupFromFile(file);
+        backupFileInput.value = "";
+      });
+    }
+  }
+
+  /* =================================================================
      Init
      ================================================================= */
   function init() {
     loadTasks();
     bindGlobalEvents();
+    bindBackupEvents();
+    updateBackupStatus();
     switchView("dashboard");
+    setTimeout(() => maybeShowBackupReminder(), 700);
   }
 
   document.addEventListener("DOMContentLoaded", init);

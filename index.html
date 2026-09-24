@@ -35,6 +35,10 @@
         <svg viewBox="0 0 24 24" class="nav-icon"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5Z"/></svg>
         <span>เพิ่มการบ้าน</span>
       </button>
+      <button class="nav-item" data-view="backup" type="button">
+        <svg viewBox="0 0 24 24" class="nav-icon"><path d="M12 3v10m0 0 4-4m-4 4-4-4M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>สำรองข้อมูล</span>
+      </button>
       <button class="nav-item" data-view="notifications" type="button">
         <svg viewBox="0 0 24 24" class="nav-icon"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6v-5a7 7 0 0 0-5.5-6.84V3a1.5 1.5 0 0 0-3 0v1.16A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2Z"/></svg>
         <span>แจ้งเตือน</span>
@@ -175,6 +179,23 @@
       <div class="notif-groups" id="notif-groups"></div>
     </section>
 
+    <!-- Backup / restore view -->
+    <section class="view" id="view-backup" hidden>
+      <div class="backup-panel">
+        <div class="backup-icon">💾</div>
+        <div class="backup-copy">
+          <h2>สำรองข้อมูลการบ้าน</h2>
+          <p>ดาวน์โหลดไฟล์สำรองไว้ในเครื่อง เพื่อกู้คืนการบ้านได้หากข้อมูลเว็บไซต์ถูกล้าง</p>
+          <p class="backup-status" id="backup-status">ยังไม่มีการสำรองข้อมูลจากอุปกรณ์นี้</p>
+        </div>
+        <div class="backup-actions">
+          <button type="button" class="btn btn-primary" id="backup-download">💾 สำรองข้อมูลตอนนี้</button>
+          <button type="button" class="btn btn-ghost" id="backup-restore">📂 กู้คืนข้อมูล</button>
+        </div>
+        <input type="file" id="backup-file" accept="application/json,.json" hidden>
+      </div>
+    </section>
+
   </main>
 </div>
 
@@ -191,6 +212,10 @@
   <button class="tab-item tab-add" data-view="add" type="button">
     <svg viewBox="0 0 24 24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5Z"/></svg>
     <span>เพิ่ม</span>
+  </button>
+  <button class="tab-item" data-view="backup" type="button">
+    <svg viewBox="0 0 24 24"><path d="M12 3v10m0 0 4-4m-4 4-4-4M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span>สำรอง</span>
   </button>
   <button class="tab-item" data-view="notifications" type="button">
     <svg viewBox="0 0 24 24"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6v-5a7 7 0 0 0-5.5-6.84V3a1.5 1.5 0 0 0-3 0v1.16A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2Z"/></svg>
