@@ -812,7 +812,6 @@
     });
 
     taskForm.addEventListener("submit", handleFormSubmit);
-    if (imagePickBtn && fImage) imagePickBtn.addEventListener("click", () => fImage.click());
     if (fImage) fImage.addEventListener("change", async () => {
       const file = fImage.files && fImage.files[0];
       if (!file) return;

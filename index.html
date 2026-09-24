@@ -166,8 +166,8 @@
           <label for="f-image">รูปการบ้าน <span class="field-optional">(ไม่บังคับ)</span></label>
           <p class="field-help">ถ่ายรูปใบงานหรือหน้าการบ้านไว้ดูทีหลังได้ รูปจะถูกย่อให้อัตโนมัติเพื่อประหยัดพื้นที่</p>
           <div class="image-upload-row">
-            <input type="file" id="f-image" accept="image/*" capture="environment" hidden>
-            <button type="button" class="btn btn-ghost" id="image-pick">📷 เพิ่มรูปการบ้าน</button>
+            <input type="file" id="f-image" accept="image/*" capture="environment" class="visually-hidden-file">
+            <label for="f-image" class="btn btn-ghost" id="image-pick">📷 เพิ่มรูปการบ้าน</label>
             <button type="button" class="btn btn-ghost image-remove" id="image-remove" hidden>ลบรูป</button>
           </div>
           <div class="image-preview-wrap" id="image-preview-wrap" hidden>
