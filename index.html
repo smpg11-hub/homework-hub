@@ -162,6 +162,19 @@
           </div>
         </fieldset>
 
+        <div class="field image-field">
+          <label for="f-image">รูปการบ้าน <span class="field-optional">(ไม่บังคับ)</span></label>
+          <p class="field-help">ถ่ายรูปใบงานหรือหน้าการบ้านไว้ดูทีหลังได้ รูปจะถูกย่อให้อัตโนมัติเพื่อประหยัดพื้นที่</p>
+          <div class="image-upload-row">
+            <input type="file" id="f-image" accept="image/*" capture="environment" hidden>
+            <button type="button" class="btn btn-ghost" id="image-pick">📷 เพิ่มรูปการบ้าน</button>
+            <button type="button" class="btn btn-ghost image-remove" id="image-remove" hidden>ลบรูป</button>
+          </div>
+          <div class="image-preview-wrap" id="image-preview-wrap" hidden>
+            <img id="image-preview" class="image-preview" alt="ตัวอย่างรูปการบ้าน">
+          </div>
+        </div>
+
         <div class="field">
           <label for="f-note">หมายเหตุ</label>
           <textarea id="f-note" rows="3" placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)"></textarea>
@@ -233,6 +246,14 @@
       <button type="button" class="btn btn-ghost" id="confirm-cancel">ยกเลิก</button>
       <button type="button" class="btn btn-danger" id="confirm-delete">ลบงาน</button>
     </div>
+  </div>
+</div>
+
+<!-- Image preview modal -->
+<div class="modal-overlay image-modal-overlay" id="image-modal-overlay" hidden>
+  <div class="image-modal" role="dialog" aria-label="รูปการบ้าน">
+    <button type="button" class="image-modal-close" id="image-modal-close" aria-label="ปิดรูป">×</button>
+    <img id="image-modal-img" alt="รูปการบ้านขนาดใหญ่">
   </div>
 </div>
 

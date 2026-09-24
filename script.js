@@ -48,6 +48,7 @@
   let searchQuery = "";
   let editingId = null;
   let pendingDeleteId = null;
+  let formImageData = null;
 
   /* =================================================================
      Date helpers
@@ -304,6 +305,14 @@
   const fDate = $("#f-date");
   const fTime = $("#f-time");
   const fNote = $("#f-note");
+  const fImage = $("#f-image");
+  const imagePickBtn = $("#image-pick");
+  const imageRemoveBtn = $("#image-remove");
+  const imagePreviewWrap = $("#image-preview-wrap");
+  const imagePreview = $("#image-preview");
+  const imageModalOverlay = $("#image-modal-overlay");
+  const imageModalImg = $("#image-modal-img");
+  const imageModalClose = $("#image-modal-close");
   const formSubmitBtn = $("#form-submit");
   const formCancelBtn = $("#form-cancel");
 
@@ -524,6 +533,7 @@
           <span class="status-badge ${st.cls}">${st.label}</span>
         </div>
         ${t.note ? `<p class="task-note">📝 ${escapeHTML(t.note)}</p>` : ""}
+        ${t.imageData ? `<button type="button" class="task-image-thumb" data-action="image" data-id="${t.id}" title="ดูรูปการบ้าน"><img src="${t.imageData}" alt="รูปการบ้าน" loading="lazy"></button>` : ""}
       </div>
       <div class="task-actions">
         <select class="status-select" data-action="status" data-id="${t.id}" aria-label="เปลี่ยนสถานะงาน">
@@ -552,6 +562,12 @@
     });
     $$('[data-action="delete"]', taskListEl).forEach((el) => {
       el.addEventListener("click", () => openDeleteConfirm(el.dataset.id));
+    });
+    $$('[data-action="image"]', taskListEl).forEach((el) => {
+      el.addEventListener("click", () => {
+        const t = tasks.find((x) => x.id === el.dataset.id);
+        if (t && t.imageData) openImageModal(t.imageData);
+      });
     });
   }
 
@@ -588,6 +604,64 @@
   }
 
   /* =================================================================
+     Homework image helpers
+     ================================================================= */
+  function updateImagePreview() {
+    if (!imagePreviewWrap || !imagePreview) return;
+    if (formImageData) {
+      imagePreview.src = formImageData;
+      imagePreviewWrap.hidden = false;
+      if (imageRemoveBtn) imageRemoveBtn.hidden = false;
+    } else {
+      imagePreview.removeAttribute("src");
+      imagePreviewWrap.hidden = true;
+      if (imageRemoveBtn) imageRemoveBtn.hidden = true;
+    }
+  }
+
+  function compressImage(file) {
+    return new Promise((resolve, reject) => {
+      if (!file || !file.type.startsWith("image/")) {
+        reject(new Error("ไฟล์นี้ไม่ใช่รูปภาพ"));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("อ่านรูปภาพไม่สำเร็จ"));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error("เปิดรูปภาพไม่สำเร็จ"));
+        img.onload = () => {
+          const maxSide = 1400;
+          const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+          canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+          const ctx = canvas.getContext("2d");
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const data = canvas.toDataURL("image/jpeg", 0.78);
+          resolve(data);
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function openImageModal(src) {
+    if (!imageModalOverlay || !imageModalImg) return;
+    imageModalImg.src = src;
+    imageModalOverlay.hidden = false;
+  }
+
+  function closeImageModal() {
+    if (!imageModalOverlay) return;
+    imageModalOverlay.hidden = true;
+    if (imageModalImg) imageModalImg.removeAttribute("src");
+  }
+
+  /* =================================================================
      CRUD operations
      ================================================================= */
   function updateStatus(id, status) {
@@ -610,6 +684,8 @@
     fDate.value = t.dueDate;
     fTime.value = t.dueTime || "";
     fNote.value = t.note || "";
+    formImageData = t.imageData || null;
+    updateImagePreview();
     const radio = $(`input[name="category"][value="${t.category}"]`);
     if (radio) radio.checked = true;
 
@@ -621,6 +697,8 @@
   function resetForm() {
     editingId = null;
     taskForm.reset();
+    formImageData = null;
+    updateImagePreview();
     formId.value = "";
     formSubmitBtn.textContent = "เพิ่มการบ้าน";
     formCancelBtn.hidden = true;
@@ -663,6 +741,7 @@
       dueTime: fTime.value,
       note: fNote.value.trim(),
       category: categoryInput.value,
+      imageData: formImageData || null,
     };
 
     if (editingId) {
@@ -733,6 +812,30 @@
     });
 
     taskForm.addEventListener("submit", handleFormSubmit);
+    if (imagePickBtn && fImage) imagePickBtn.addEventListener("click", () => fImage.click());
+    if (fImage) fImage.addEventListener("change", async () => {
+      const file = fImage.files && fImage.files[0];
+      if (!file) return;
+      try {
+        formImageData = await compressImage(file);
+        updateImagePreview();
+        showToast("เพิ่มรูปการบ้านแล้ว", "success");
+      } catch (err) {
+        showToast(err.message || "เพิ่มรูปไม่สำเร็จ", "danger");
+      } finally {
+        fImage.value = "";
+      }
+    });
+    if (imageRemoveBtn) imageRemoveBtn.addEventListener("click", () => {
+      formImageData = null;
+      updateImagePreview();
+      showToast("ลบรูปออกจากงานนี้แล้ว");
+    });
+    if (imageModalClose) imageModalClose.addEventListener("click", closeImageModal);
+    if (imageModalOverlay) imageModalOverlay.addEventListener("click", (e) => {
+      if (e.target === imageModalOverlay) closeImageModal();
+    });
+
     formCancelBtn.addEventListener("click", () => {
       resetForm();
       switchView("tasks");
@@ -745,6 +848,7 @@
     });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && !confirmOverlay.hidden) closeDeleteConfirm();
+      if (e.key === "Escape" && imageModalOverlay && !imageModalOverlay.hidden) closeImageModal();
     });
   }
 
