@@ -305,8 +305,10 @@
   const fDate = $("#f-date");
   const fTime = $("#f-time");
   const fNote = $("#f-note");
-  const fImage = $("#f-image");
+  const fImage = $("#f-image-camera");
+  const fImageGallery = $("#f-image-gallery");
   const imagePickBtn = $("#image-pick");
+  const imageGalleryPickBtn = $("#image-gallery-pick");
   const imageRemoveBtn = $("#image-remove");
   const imagePreviewWrap = $("#image-preview-wrap");
   const imagePreview = $("#image-preview");
@@ -812,8 +814,9 @@
     });
 
     taskForm.addEventListener("submit", handleFormSubmit);
-    if (fImage) fImage.addEventListener("change", async () => {
-      const file = fImage.files && fImage.files[0];
+
+    const handleImageFile = async (input) => {
+      const file = input && input.files && input.files[0];
       if (!file) return;
       try {
         formImageData = await compressImage(file);
@@ -822,9 +825,12 @@
       } catch (err) {
         showToast(err.message || "เพิ่มรูปไม่สำเร็จ", "danger");
       } finally {
-        fImage.value = "";
+        input.value = "";
       }
-    });
+    };
+
+    if (fImage) fImage.addEventListener("change", () => handleImageFile(fImage));
+    if (fImageGallery) fImageGallery.addEventListener("change", () => handleImageFile(fImageGallery));
     if (imageRemoveBtn) imageRemoveBtn.addEventListener("click", () => {
       formImageData = null;
       updateImagePreview();
