@@ -623,29 +623,56 @@
 
   function compressImage(file) {
     return new Promise((resolve, reject) => {
-      if (!file || !file.type.startsWith("image/")) {
-        reject(new Error("ไฟล์นี้ไม่ใช่รูปภาพ"));
+      if (!file) {
+        reject(new Error("ยังไม่ได้เลือกรูป"));
         return;
       }
+
+      // Android camera/gallery บางรุ่นอาจส่ง MIME type ว่างหรือแปลกกว่าปกติ
+      // จึงไม่บังคับตรวจ file.type ว่าต้องขึ้นต้นด้วย image/
       const reader = new FileReader();
       reader.onerror = () => reject(new Error("อ่านรูปภาพไม่สำเร็จ"));
       reader.onload = () => {
+        const src = reader.result;
         const img = new Image();
-        img.onerror = () => reject(new Error("เปิดรูปภาพไม่สำเร็จ"));
-        img.onload = () => {
-          const maxSide = 1400;
-          const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
-          const canvas = document.createElement("canvas");
-          canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
-          canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
-          const ctx = canvas.getContext("2d");
-          ctx.fillStyle = "#ffffff";
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          const data = canvas.toDataURL("image/jpeg", 0.78);
-          resolve(data);
+
+        const finishFallback = () => {
+          // ถ้าบางเครื่องถอดรหัส/วาดภาพผ่าน canvas ไม่ได้ ให้เก็บไฟล์เดิมแทน
+          // เพื่อให้รูปยังแนบกับการบ้านได้
+          resolve(src);
         };
-        img.src = reader.result;
+
+        img.onerror = finishFallback;
+        img.onload = () => {
+          const w = img.naturalWidth || img.width;
+          const h = img.naturalHeight || img.height;
+          if (!w || !h) {
+            finishFallback();
+            return;
+          }
+
+          try {
+            const maxSide = 1400;
+            const scale = Math.min(1, maxSide / Math.max(w, h));
+            const canvas = document.createElement("canvas");
+            canvas.width = Math.max(1, Math.round(w * scale));
+            canvas.height = Math.max(1, Math.round(h * scale));
+            const ctx = canvas.getContext("2d");
+            if (!ctx) {
+              finishFallback();
+              return;
+            }
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const data = canvas.toDataURL("image/jpeg", 0.78);
+            resolve(data && data.length > 100 ? data : src);
+          } catch (_) {
+            finishFallback();
+          }
+        };
+
+        img.src = src;
       };
       reader.readAsDataURL(file);
     });
